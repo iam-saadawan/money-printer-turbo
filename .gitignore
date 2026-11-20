@@ -26,9 +26,20 @@ node_modules
 ./models/*
 
 venv/
+venv*/
 .venv
+.venv*/
+.env*
+.claude/
+
+# Remotion build and asset outputs
+remotion_shorts/out/
+remotion_shorts/public/
 
 # Debug and test files
+scratch/
+scratch_*/
+*.raw
 CLAUDE.md
 debug/
 debug_*.py
@@ -40,8 +51,9 @@ streamlit.log
 coverage.xml
 htmlcov/
 .codegraph
-/docs/superpowers
 .understand-anything
-
-# Claude Code 订阅令牌（docker compose 自动读取），禁止提交
-.env
+resource/untrusted_songs_backup/
+*.tar.gz
+*.zip
+*.mp3
+!resource/songs/*.mp3

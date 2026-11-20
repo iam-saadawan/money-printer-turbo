@@ -1,29 +1,12 @@
 import sys
 
-from app.utils.logging_utils import (
-    LOG_LEVELS,
-    configure_terminal_logger,
-    force_utf8_console,
-    set_logging_options,
-)
-
-# The API, the WebUI and the CLI all import this package first. Switch the
-# console streams before config.py logs anything while it loads.
-force_utf8_console()
-
-from app.config import config  # noqa: E402
+from app.config import config
+from app.utils.logging_utils import configure_terminal_logger
 
 
 def __init_logger():
     # _log_file = utils.storage_dir("logs/server.log")
-    _lvl = str(config.diagnostics.get("log_level", config.log_level)).strip().upper()
-    if _lvl not in LOG_LEVELS:
-        _lvl = str(config.log_level).strip().upper()
-        if _lvl not in LOG_LEVELS:
-            _lvl = "DEBUG"
-    # 分别校验两个选项：非法追踪值不能降低用户已有的日志等级。
-    _trace = config.diagnostics.get("log_requests", False)
-    set_logging_options(_lvl, _trace if isinstance(_trace, bool) else False)
+    _lvl = config.log_level
 
     configure_terminal_logger(
         sys.stdout,

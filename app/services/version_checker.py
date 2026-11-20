@@ -8,8 +8,6 @@ from typing import Final
 
 import requests
 from loguru import logger
-
-from app.utils.request_logging import trace_http_call
 from packaging.version import InvalidVersion, Version
 
 
@@ -56,8 +54,7 @@ def get_available_update(current_version: str) -> str | None:
         return None
 
     try:
-        response = trace_http_call(
-            "GET", requests.get,
+        response = requests.get(
             LATEST_RELEASE_API_URL,
             headers=RELEASE_CHECK_HEADERS,
             timeout=RELEASE_CHECK_TIMEOUT,
@@ -135,7 +132,6 @@ class AsyncUpdateChecker:
         self._available_version: str | None = None
         self._completed_at: float | None = None
         self._checking = False
-        self._request_id = 0
 
     def poll(self, current_version: str) -> UpdateCheckSnapshot:
         """立即返回检查快照；缓存过期时在后台启动一次新检查。"""
@@ -166,26 +162,18 @@ class AsyncUpdateChecker:
             self._available_version = None
             self._completed_at = None
             self._checking = True
-            self._request_id += 1
 
-            try:
-                worker = threading.Thread(
-                    target=self._run_check,
-                    args=(normalized_current_version, self._request_id),
-                    name="mpt-version-check",
-                    daemon=True,
-                )
-                worker.start()
-            except RuntimeError as exc:
-                # Thread exhaustion must not leave every subsequent poll pending.
-                logger.warning(f"could not start update check thread: {exc}")
-                self._checking = False
-                self._completed_at = now
-                return UpdateCheckSnapshot(complete=True)
+            worker = threading.Thread(
+                target=self._run_check,
+                args=(normalized_current_version,),
+                name="mpt-version-check",
+                daemon=True,
+            )
+            worker.start()
 
         return UpdateCheckSnapshot(complete=False)
 
-    def _run_check(self, current_version: str, request_id: int) -> None:
+    def _run_check(self, current_version: str) -> None:
         try:
             available_version = self._check(current_version)
         except Exception:
@@ -197,9 +185,8 @@ class AsyncUpdateChecker:
             available_version = None
 
         with self._lock:
-            # A -> B -> A can launch two workers for the same version. Only the
-            # latest request may complete the current snapshot.
-            if self._request_id != request_id:
+            # 极少数情况下运行期间版本可能变化。旧线程不得覆盖新版本的状态。
+            if self._current_version != current_version:
                 return
             self._available_version = available_version
             self._completed_at = self._clock()
