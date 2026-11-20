@@ -1,0 +1,1 @@
+-i s_bruce_blush.jpg -i s_flight_tongue.jpg -i s_flight_tongue_laugh.jpg -i s_grandpa_hellnah.jpg -i s_hamster_violin.jpg -i s_hold_up.jpg -i s_kai_ayo.jpg -i s_ksi_ayo.jpg 
